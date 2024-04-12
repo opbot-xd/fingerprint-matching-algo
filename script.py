@@ -1,83 +1,65 @@
 import cv2
 import os
-
-sample = cv2.imread('SOCOFing/Altered/Altered-Easy/1__M_Left_little_finger_CR.BMP')
-
-image = None
-filename = None 
 import time
-best_score = 0
-kp1, kp2, mp = None, None, None
-sift = cv2.SIFT_create()
+from multiprocessing import Pool, cpu_count
 
-kp1, des1 = sift.detectAndCompute(sample, None)
-# caLculate the time
-# Loop through all the files in the Real folder
-
-# end timer
-all_kp2_des2 = []
-process_time = time.time()
-
-# Loop through all the files in the Real folder and compute keypoints and descriptors
-for file in os.listdir('SOCOFing/Real/'):
-    # Tho we will pre-compute it
-    start_single_image = time.time()
+def compute_keypoints_descriptors(file):
     fingerprint_image = cv2.imread(os.path.join('SOCOFing/Real/', file))
-
-    # Detect keypoints and compute descriptors for each image
     kp2, des2 = sift.detectAndCompute(fingerprint_image, None)
-    end_single_image = time.time()
-    print('Processing:', file, 'Time:', end_single_image-start_single_image)
+    # Extract only the necessary information from KeyPoint objects
+    kp2_info = [(kp.pt, kp.size, kp.angle, kp.response, kp.octave, kp.class_id) for kp in kp2]
+    return file, kp2_info, des2
 
-    all_kp2_des2.append((file, kp2, des2))
-
-
-end_process_time = time.time()
-
-# duplicate the all_kp2_des2
-all_kp2_des2.extend(all_kp2_des2)
-# all_kp2_des2.extend(all_kp2_des2)
-
-
-# Start timer
-knn_start = time.time()
-counter = 0
-# Loop through all the precomputed keypoints and descriptors
-for fil, kp2, des2 in all_kp2_des2:
-    # Perform matching between sample and current image
-    single_matching_start = time.time()
+def knn_match(args):
+    fil, kp2_info, des2 = args
+    
+    # Reconstruct KeyPoint objects from extracted information
+    kp2 = [cv2.KeyPoint(x, y, _size, _angle, _response, _octave, _class_id) 
+           for (x, y), _size, _angle, _response, _octave, _class_id in kp2_info]
+    
     matches = cv2.FlannBasedMatcher({'algorithm': 1, 'trees': 10}, {}).knnMatch(des1, des2, k=2)
-
+    
     match_point = []
-
     for p, q in matches:
         if p.distance < 0.1 * q.distance:
             match_point.append(p)
 
-    # Calculate the number of keypoints for scoring
     keypoints = min(len(kp1), len(kp2))
-
-    # Calculate the score for the current image
     score = len(match_point) / keypoints * 100
 
-    # Update the best match if the current score is higher
-    if score > best_score:
-        best_score = score
-        image = fingerprint_image
-        filename = fil
-        kp2 = kp2
-        mp = match_point
-    counter += 1
-    single_matching_end = time.time()
-    print('Matching:', fil, 'Time:', single_matching_end-single_matching_start)
+    return fil, score
 
-# End timer
-knn_end = time.time()
+if __name__ == '__main__':
+    sample = cv2.imread('SOCOFing/Altered/Altered-Easy/1__M_Left_little_finger_CR.BMP')
+    sift = cv2.SIFT_create()
+    kp1, des1 = sift.detectAndCompute(sample, None)
 
-print('Best Score:', best_score)
-print('Filename:', filename)
-print('Knn Time:', knn_end-knn_start)
-print('Single Knn Time:', single_matching_end - single_matching_start)
-print('Image Process Time:', end_process_time- process_time)
+    process_time = time.time()
+    all_kp2_des2 = []
 
+    # Parallel computation of keypoints and descriptors
+    with Pool(cpu_count()) as p:
+        all_kp2_des2 = p.map(compute_keypoints_descriptors, os.listdir('SOCOFing/Real/'))
 
+    end_process_time = time.time()
+    all_kp2_des2.extend(all_kp2_des2)
+    best_score = 0
+    best_match = None
+    knn_start = time.time()
+
+    # Parallel computation of knn match
+    with Pool(cpu_count()) as p:
+        results = p.map(knn_match, all_kp2_des2)
+
+    knn_end = time.time()
+
+    for fil, score in results:
+        if score > best_score:
+            best_score = score
+            best_match = fil
+
+    print('Best Score:', best_score)
+    print('Filename:', best_match)
+    print('Knn Time:', knn_end - knn_start)
+    print('Image Process Time:', end_process_time - process_time)
+    print('Total Time:', time.time() - process_time)
