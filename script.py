@@ -1,7 +1,7 @@
 import cv2
 import os
 
-sample = cv2.imread('SOCOFing/Altered/Altered-Easy/600__M_Left_ring_finger_Obl.BMP')
+sample = cv2.imread('SOCOFing/Altered/Altered-Easy/1__M_Left_little_finger_CR.BMP')
 
 image = None
 filename = None 
@@ -29,16 +29,21 @@ for file in os.listdir('SOCOFing/Real/'):
     end_single_image = time.time()
     print('Processing:', file, 'Time:', end_single_image-start_single_image)
 
-    all_kp2_des2.append((kp2, des2))
+    all_kp2_des2.append((file, kp2, des2))
 
 
 end_process_time = time.time()
 
+# duplicate the all_kp2_des2
+all_kp2_des2.extend(all_kp2_des2)
+# all_kp2_des2.extend(all_kp2_des2)
+
+
 # Start timer
 knn_start = time.time()
-
+counter = 0
 # Loop through all the precomputed keypoints and descriptors
-for kp2, des2 in all_kp2_des2:
+for fil, kp2, des2 in all_kp2_des2:
     # Perform matching between sample and current image
     single_matching_start = time.time()
     matches = cv2.FlannBasedMatcher({'algorithm': 1, 'trees': 10}, {}).knnMatch(des1, des2, k=2)
@@ -59,12 +64,12 @@ for kp2, des2 in all_kp2_des2:
     if score > best_score:
         best_score = score
         image = fingerprint_image
-        filename = file
+        filename = fil
         kp2 = kp2
         mp = match_point
-
+    counter += 1
     single_matching_end = time.time()
-    print('Matching:', file, 'Time:', single_matching_end-single_matching_start)
+    print('Matching:', fil, 'Time:', single_matching_end-single_matching_start)
 
 # End timer
 knn_end = time.time()
