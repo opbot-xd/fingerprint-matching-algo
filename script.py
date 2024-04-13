@@ -6,14 +6,14 @@ from multiprocessing import Pool, cpu_count
 def compute_keypoints_descriptors(file):
     fingerprint_image = cv2.imread(os.path.join('SOCOFing/Real/', file))
     kp2, des2 = sift.detectAndCompute(fingerprint_image, None)
-    # Extract only the necessary information from KeyPoint objects
     kp2_info = [(kp.pt, kp.size, kp.angle, kp.response, kp.octave, kp.class_id) for kp in kp2]
     return file, kp2_info, des2
+
+
 
 def knn_match(args):
     fil, kp2_info, des2 = args
     
-    # Reconstruct KeyPoint objects from extracted information
     kp2 = [cv2.KeyPoint(x, y, _size, _angle, _response, _octave, _class_id) 
            for (x, y), _size, _angle, _response, _octave, _class_id in kp2_info]
     
@@ -37,18 +37,20 @@ if __name__ == '__main__':
     process_time = time.time()
     all_kp2_des2 = []
 
-    # Parallel computation of keypoints and descriptors
     with Pool(cpu_count()) as p:
         all_kp2_des2 = p.map(compute_keypoints_descriptors, os.listdir('SOCOFing/Real/'))
 
     end_process_time = time.time()
+    gg = all_kp2_des2
     all_kp2_des2.extend(all_kp2_des2)
+    all_kp2_des2.extend(gg)
     best_score = 0
     best_match = None
     knn_start = time.time()
 
     # Parallel computation of knn match
     with Pool(cpu_count()) as p:
+        print('Number of CPU:', cpu_count())
         results = p.map(knn_match, all_kp2_des2)
 
     knn_end = time.time()

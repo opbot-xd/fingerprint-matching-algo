@@ -2,6 +2,7 @@
 
 
 Dataset on https://www.kaggle.com/datasets/ruizgara/socofing?resource=download
+Data Collection Research Paper: https://arxiv.org/pdf/1807.10609.pdf
 
 
 After Parallelization (Total Fingerprint 12,000)
