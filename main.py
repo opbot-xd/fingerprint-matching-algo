@@ -1,3 +1,7 @@
+from typing import Union
+from fastapi import FastAPI
+
+
 import cv2
 import os
 import time
@@ -8,11 +12,34 @@ import psutil
 # import re
 # cProfile.run('re.compile("foo|bar")')
 
+
+sample = cv2.imread('SOCOFing/Altered/Altered-Easy/1__M_Left_little_finger_CR.BMP')
+sift = cv2.SIFT_create()
+kp1, des1 = sift.detectAndCompute(sample, None)
+
 def compute_keypoints_descriptors(file):
     fingerprint_image = cv2.imread(os.path.join('SOCOFing/Real/', file))
     kp2, des2 = sift.detectAndCompute(fingerprint_image, None)
     kp2_info = [(kp.pt, kp.size, kp.angle, kp.response, kp.octave, kp.class_id) for kp in kp2]
     return file, kp2_info, des2
+
+all_kp2_des2 = []
+
+# with Pool(cpu_count()) as p:
+for file in os.listdir('SOCOFing/Real/'):
+    print(file)
+    all_kp2_des2.append(compute_keypoints_descriptors(file))
+    # all_kp2_des2=  p.map(compute_keypoints_descriptors, os.listdir('SOCOFing/Real/'))
+
+
+
+
+# iterate all the images in SOCOFing/Real/ and compute the keypoints and descriptors
+# all_kp2_des2 = []
+#     fingerprint_image = cv2.imread(os.path.join('SOCOFing/Real/', file))
+#     kp2, des2 = sift.detectAndCompute(fingerprint_image, None)
+#     kp2_info = [(kp.pt, kp.size, kp.angle, kp.response, kp.octave, kp.class_id) for kp in kp2]
+#     all_kp2_des2.append((file, kp2_info, des2))
 
 
 
@@ -35,32 +62,23 @@ def knn_match(args):
 
     return fil, score
 
-# def main():
-if __name__ == '__main__':
+
+def dmain():
+#if __name__ == '__main__':
     process_time = time.time()
 
-    sample = cv2.imread('SOCOFing/Altered/Altered-Easy/1__M_Left_little_finger_CR.BMP')
-    sift = cv2.SIFT_create()
-    kp1, des1 = sift.detectAndCompute(sample, None)
 
     #NOTE kp1 is list of keypoints and des is numpy array of shape (number_of_keypoints, 128)
     # ggdf = cv2.drawKeypoints(sample, kp1, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
     # cv2.imwrite('keypoints.jpg', ggdf) // to draw the keypoints of the fingerprint image
 
 
-    all_kp2_des2 = []
-
-    with Pool(cpu_count()) as p:
-        all_kp2_des2=  p.map(compute_keypoints_descriptors, os.listdir('SOCOFing/Real/'))
 
 
     end_process_time = time.time()
-    # if all_kp2_des2 size is 6000, how can i make it 18000 by duplicating the data
-
-
-    gg = all_kp2_des2
-    all_kp2_des2.extend(all_kp2_des2)
-    # # all_kp2_des2.extend(all_kp2_des2)
+    # gg = all_kp2_des2
+    # all_kp2_des2.extend(all_kp2_des2)
+    # all_kp2_des2.extend(all_kp2_des2)
     # all_kp2_des2.extend(gg)
     best_score = 0
     best_match = None
@@ -89,3 +107,19 @@ if __name__ == '__main__':
     print('Image Process Time (We will pre-compute it):', end_process_time - process_time)
     print('Loop Time:', loop_time_end - loop_time_start)
     print('Total Time:', time.time() - process_time)
+
+
+app = FastAPI()
+
+@app.get("/")
+def read_root():
+    dmain()
+    return {"Hello": "World"}
+
+
+@app.get("/items/{item_id}")
+def read_item(item_id: int, q: Union[str, None] = None):
+    dmain()
+    return {"item_id": item_id, "q": q}
+
+
