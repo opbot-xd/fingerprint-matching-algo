@@ -1,4 +1,5 @@
 # fingerprint-matching-algo
+`Only for Demo and Learning purpose`
 
 For Testing Download below dataset, it contains 6000 all ten finger data of 600 people
 Dataset on https://www.kaggle.com/datasets/ruizgara/socofing?resource=download
