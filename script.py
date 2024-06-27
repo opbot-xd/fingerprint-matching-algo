@@ -7,7 +7,9 @@ import psutil
 # import cProfile
 # import re
 # cProfile.run('re.compile("foo|bar")')
-
+sample = cv2.imread('SOCOFing/Altered/Altered-Easy/1__M_Left_little_finger_CR.BMP')
+sift = cv2.SIFT_create()
+kp1, des1 = sift.detectAndCompute(sample, None)
 def compute_keypoints_descriptors(file):
     fingerprint_image = cv2.imread(os.path.join('SOCOFing/Real/', file))
     kp2, des2 = sift.detectAndCompute(fingerprint_image, None)
@@ -38,10 +40,6 @@ def knn_match(args):
 # def main():
 if __name__ == '__main__':
     process_time = time.time()
-
-    sample = cv2.imread('SOCOFing/Altered/Altered-Easy/1__M_Left_little_finger_CR.BMP')
-    sift = cv2.SIFT_create()
-    kp1, des1 = sift.detectAndCompute(sample, None)
 
     #NOTE kp1 is list of keypoints and des is numpy array of shape (number_of_keypoints, 128)
     # ggdf = cv2.drawKeypoints(sample, kp1, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
