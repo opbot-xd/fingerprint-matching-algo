@@ -5,7 +5,7 @@ import numpy as np
 from multiprocessing import Pool, cpu_count
 
 # Read the sample fingerprint image
-sample = cv2.imread('SOCOFing/Altered/Altered-Easy/1__M_Left_little_finger_CR.BMP')
+sample = cv2.imread('SOCOFing/Altered/Altered-Easy/5__M_Left_little_finger_CR.BMP',flags = cv2.IMREAD_GRAYSCALE)
 
 # Create AKAZE detector
 akaze = cv2.AKAZE_create()
@@ -16,7 +16,7 @@ des1 = np.float32(des1)  # Convert descriptors to float32
 
 def compute_keypoints_descriptors(file):
     # Read a fingerprint image
-    fingerprint_image = cv2.imread(os.path.join('SOCOFing/Real/', file))
+    fingerprint_image = cv2.imread(os.path.join('SOCOFing/Real/', file),flags=cv2.IMREAD_GRAYSCALE)
     # Detect keypoints and compute descriptors using AKAZE
     kp2, des2 = akaze.detectAndCompute(fingerprint_image, None)
     if des2 is not None:
@@ -39,14 +39,14 @@ def knn_match(args):
 
     # FLANN parameters for AKAZE
     FLANN_INDEX_KDTREE = 1
-    index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=10)
-    search_params = dict(checks=1)
+    index_params = dict(algorithm=FLANN_INDEX_KDTREE, tree=10)
+    search_params = {'checks':50}
 
     # Use FlannBasedMatcher to match descriptors
     flann = cv2.FlannBasedMatcher(index_params, search_params)
     matches = flann.knnMatch(des1, des2, k=2)
 
-    ratio_thresh = 0.4
+    ratio_thresh = 0.8
     good_matches = []
     for m, n in matches:
         if m.distance < ratio_thresh * n.distance:

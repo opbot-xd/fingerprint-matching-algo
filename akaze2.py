@@ -6,7 +6,7 @@ from multiprocessing import Pool, cpu_count
 import faiss
 
 # Read the sample fingerprint image
-sample = cv2.imread('SOCOFing/Altered/Altered-Easy/1__M_Left_little_finger_CR.BMP')
+sample = cv2.imread('SOCOFing/Altered/Altered-Easy/100__M_Left_little_finger_CR.BMP')
 
 # Create AKAZE detector
 akaze = cv2.AKAZE_create()
@@ -48,7 +48,7 @@ def knn_match(args):
     D, I = index.search(des2, k)  # search for k nearest neighbors for each descriptor in des2
 
     # Process the results
-    ratio_thresh = 0.4
+    ratio_thresh = 0.7
     good_matches = []
     for i in range(len(I)):
         if D[i][0] < ratio_thresh * D[i][1]:
